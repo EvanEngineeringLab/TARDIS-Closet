@@ -58,38 +58,32 @@ tardis_b64 = get_image_base64("Photos/TARDIS_icon.png")
 # Set the page title and layout
 st.set_page_config(page_title="TARDIS Closet", page_icon="Photos/TARDIS_icon.png", layout="centered")
 
-# Force the TARDIS icon for the PWA/Home Screen shortcut
-# This must be a square image (recommended 512x512)
-tardis_icon_b64 = get_image_base64("Photos/TARDIS_icon.png")
-
+# Force the TARDIS icon for the PWA/Home Screen shortcut using a direct GitHub URL
 components.html(
-    f"""
+    """
     <script>
-        // Create a manifest with your icon
-        const manifest = {{
+        const manifest = {
             "name": "TARDIS Closet",
             "short_name": "TARDIS Closet",
-            "icons": [{{
-                "src": "data:image/png;base64,{tardis_icon_b64}",
+            "icons": [{
+                "src": "https://raw.githubusercontent.com/EvanEngineeringLab/TARDIS-Closet/main/Photos/TARDIS_icon.png",
                 "sizes": "512x512",
                 "type": "image/png"
-            }}],
+            }],
             "start_url": ".",
             "display": "standalone"
-        }};
+        };
         
-        // Inject it into the head of the parent document
         const stringManifest = JSON.stringify(manifest);
-        const blob = new Blob([stringManifest], {{type: 'application/json'}});
+        const blob = new Blob([stringManifest], {type: 'application/json'});
         const manifestURL = URL.createObjectURL(blob);
         
-        // Find or create the manifest link tag
         let link = document.querySelector('link[rel="manifest"]');
-        if (!link) {{
+        if (!link) {
             link = document.createElement('link');
             link.rel = 'manifest';
             document.head.appendChild(link);
-        }}
+        }
         link.href = manifestURL;
     </script>
     """,
