@@ -5,6 +5,8 @@ import time
 import base64
 import sqlite3
 import uuid
+
+# --- SECRETS SETUP ---
 OPENWEATHER_TOKEN = st.secrets["OPENWEATHER_TOKEN"]
 
 # --- DATABASE SETUP (SQLite) ---
@@ -48,35 +50,61 @@ def reset_app():
     st.session_state.page = "menu"
     st.session_state.outfit_data = {}
 
-# Set the page title and layout with TARDIS icon
+# Load background and TARDIS icon
+bg_b64 = get_image_base64("Photos/background.png")
+tardis_b64 = get_image_base64("Photos/TARDIS_icon.png")
+
+# Set the page title and layout
 st.set_page_config(page_title="TARDIS Closet", page_icon="Photos/TARDIS_icon.png", layout="centered")
 
 # --- CUSTOM CSS ---
-st.markdown("""
+st.markdown(f"""
 <style>
-    .title-container { text-align: center; margin-bottom: 30px; }
-    .stButton>button { height: 60px; font-size: 18px !important; border-radius: 10px; }
-    .weather-prompt { font-size: 24px; font-weight: bold; text-align: center; margin-top: 20px; margin-bottom: 20px; text-shadow: 2px 2px 4px #000; }
-    [data-testid="StyledFullScreenButton"], button[title="View fullscreen"] { display: none !important; }
-    [data-testid="column"]:hover { background-color: transparent !important; }
+    /* Doctor Who Background */
+    .stApp {{
+        background-image: url("data:image/png;base64,{bg_b64}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    
+    .title-container {{ text-align: center; margin-bottom: 30px; }}
+    
+    /* Make buttons solid dark gray so they don't blend into the background */
+    .stButton>button {{ 
+        height: 60px; 
+        font-size: 18px !important; 
+        border-radius: 10px;
+        background-color: rgba(30, 30, 30, 0.9) !important;
+        color: white !important;
+        border: 1px solid #555 !important;
+    }}
+    
+    .stButton>button:hover {{
+        border: 1px solid #4da8da !important;
+        color: #4da8da !important;
+    }}
+    
+    .weather-prompt {{ font-size: 24px; font-weight: bold; text-align: center; margin-top: 20px; margin-bottom: 20px; text-shadow: 2px 2px 4px #000; }}
+    
+    [data-testid="StyledFullScreenButton"], 
+    button[title="View fullscreen"] {{ display: none !important; }}
+    [data-testid="column"]:hover {{ background-color: transparent !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Load TARDIS icon for the header
-tardis_b64 = get_image_base64("Photos/TARDIS_icon.png")
-st.markdown(f'<div class="title-container" style="display: flex; justify-content: center; align-items: center; gap: 15px;"><img src="data:image/png;base64,{tardis_b64}" style="height: 120px;"><h1 style="margin: 0;">TARDIS Closet</h1></div>', unsafe_allow_html=True)
+# Render header with TARDIS image
+st.markdown(f'<div class="title-container" style="display: flex; justify-content: center; align-items: center; gap: 15px;"><img src="data:image/png;base64,{tardis_b64}" style="height: 120px;"><h1 style="margin: 0; color: white; text-shadow: 2px 2px 4px #000;">TARDIS Closet</h1></div>', unsafe_allow_html=True)
 
 # --- URL SESSION MANAGEMENT ---
-# Check if there is an ID in the URL query parameters
 query_params = st.query_params
 url_session_id = query_params.get("user_id", None)
 
 if "session_id" not in st.session_state:
     if url_session_id:
-        # If the URL has an ID, use it
         st.session_state.session_id = url_session_id
     else:
-        # If not, create a new one and put it in the URL
         new_id = str(uuid.uuid4())
         st.session_state.session_id = new_id
         st.query_params["user_id"] = new_id
@@ -102,7 +130,7 @@ if "outfit_data" not in st.session_state:
 # PAGE 0: WELCOME SCREEN
 # ==========================================
 if st.session_state.page == "welcome":
-    st.markdown('<div style="text-align: center; font-size: 20px; margin-bottom: 20px;">Welcome! Please set up your profile to begin.</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; font-size: 20px; margin-bottom: 20px; color: white; text-shadow: 2px 2px 4px #000;">Welcome! Please set up your profile to begin.</div>', unsafe_allow_html=True)
     
     with st.form("setup_form"):
         st.subheader("Location")
@@ -156,7 +184,7 @@ elif st.session_state.page == "menu":
             st.session_state.clear()
             st.rerun()
             
-    st.markdown('<div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px;">What is the occasion?</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; color: white; text-shadow: 2px 2px 4px #000;">What is the occasion?</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     occasion = None
@@ -323,7 +351,7 @@ elif st.session_state.page == "fetch_outfit":
             else:
                 st.error(f"Error connecting to Notion: {response.status_code}")
 
-    st.success(f"**Occasion:** {data['occasion']} | **Weather:** {data['final_weather']} in {data['city']} ({data['temp']}°F / {data['humidity']}%)")
+    st.markdown(f'<div style="color: white; text-shadow: 2px 2px 4px #000; font-size: 20px; margin-bottom: 20px;"><b>Occasion:</b> {data["occasion"]} | <b>Weather:</b> {data["final_weather"]} in {data["city"]} ({data["temp"]}°F / {data["humidity"]}%)</div>', unsafe_allow_html=True)
     
     col_a, col_b = st.columns([1, 1])
     with col_a:
@@ -346,18 +374,18 @@ elif st.session_state.page == "fetch_outfit":
                 chosen = random.sample(items, 2)
                 for item in chosen:
                     with cols[col_index % 3]:
-                        st.write(f"**{slot}:** {item['name']}")
+                        st.markdown(f'<div style="color: white; font-weight: bold; text-shadow: 1px 1px 2px #000;">{slot}: {item["name"]}</div>', unsafe_allow_html=True)
                         if item["image"]:
                             st.image(item["image"], use_container_width=True)
                     col_index += 1
             else:
                 chosen = random.choice(items)
                 with cols[col_index % 3]:
-                    st.write(f"**{slot}:** {chosen['name']}")
+                    st.markdown(f'<div style="color: white; font-weight: bold; text-shadow: 1px 1px 2px #000;">{slot}: {chosen["name"]}</div>', unsafe_allow_html=True)
                     if chosen["image"]:
                         st.image(chosen["image"], use_container_width=True)
                 col_index += 1
         else:
             with cols[col_index % 3]:
-                st.write(f"**{slot}:** No items found")
+                st.markdown(f'<div style="color: white; font-weight: bold; text-shadow: 1px 1px 2px #000;">{slot}: No items found</div>', unsafe_allow_html=True)
             col_index += 1
