@@ -134,6 +134,20 @@ st.markdown(f"""
         border: 1px solid #555;
     }}
 
+    /* Force white text for form labels and inputs */
+    [data-testid="stForm"] label,
+    [data-testid="stForm"] p,
+    [data-testid="stWidgetLabel"] p {{
+        color: white !important;
+        font-weight: 600 !important;
+    }}
+    
+    /* Make the text input boxes lighter so they stand out */
+    [data-testid="stTextInput"] input {{
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }}
+
     /* Make the columns responsive for mobile */
     @media (max-width: 768px) {{
         [data-testid="column"] {{
