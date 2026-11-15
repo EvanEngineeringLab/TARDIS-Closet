@@ -99,6 +99,21 @@ st.markdown(f"""
         border-radius: 10px;
         border: 1px solid #555;
     }}
+
+    /* Make the columns responsive for mobile */
+    @media (max-width: 768px) {{
+        [data-testid="column"] {{
+            width: 50% !important;
+            flex: 1 1 calc(50% - 1rem) !important;
+            min-width: 50% !important;
+        }}
+        .title-container h1 {{
+            font-size: 2rem !important; /* Shrink title on mobile */
+        }}
+        .title-container img {{
+            height: 80px !important; /* Shrink icon on mobile */
+        }}
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -207,27 +222,27 @@ elif st.session_state.page == "menu":
     img_cosplay = get_image_base64("Photos/Cosplay.png")
 
     with col1:
-        if img_casual: st.markdown(f'<img src="data:image/png;base64,{img_casual}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_casual: st.markdown(f'<img src="data:image/png;base64,{img_casual}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Casual", use_container_width=True): occasion = "Casual"
-        if img_date: st.markdown(f'<img src="data:image/png;base64,{img_date}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_date: st.markdown(f'<img src="data:image/png;base64,{img_date}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Date", use_container_width=True): occasion = "Date"
         
     with col2:
-        if img_school: st.markdown(f'<img src="data:image/png;base64,{img_school}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_school: st.markdown(f'<img src="data:image/png;base64,{img_school}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("School", use_container_width=True): occasion = "School"
-        if img_interview: st.markdown(f'<img src="data:image/png;base64,{img_interview}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_interview: st.markdown(f'<img src="data:image/png;base64,{img_interview}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Interview", use_container_width=True): occasion = "Job Interview"
         
     with col3:
-        if img_work: st.markdown(f'<img src="data:image/png;base64,{img_work}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_work: st.markdown(f'<img src="data:image/png;base64,{img_work}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Work", use_container_width=True): occasion = "Work"
-        if img_pres: st.markdown(f'<img src="data:image/png;base64,{img_pres}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_pres: st.markdown(f'<img src="data:image/png;base64,{img_pres}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Presentation", use_container_width=True): occasion = "Presentation"
         
     with col4:
-        if img_formal: st.markdown(f'<img src="data:image/png;base64,{img_formal}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_formal: st.markdown(f'<img src="data:image/png;base64,{img_formal}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Formal", use_container_width=True): occasion = "Formal Event"
-        if img_cosplay: st.markdown(f'<img src="data:image/png;base64,{img_cosplay}" style="width:200px; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
+        if img_cosplay: st.markdown(f'<img src="data:image/png;base64,{img_cosplay}" style="width:100%; height:130px; object-fit:cover; border-radius:10px; margin-bottom:10px; margin-top:10px; pointer-events:none;">', unsafe_allow_html=True)
         if st.button("Cosplay", use_container_width=True): occasion = "Cosplay"
 
     if occasion:
