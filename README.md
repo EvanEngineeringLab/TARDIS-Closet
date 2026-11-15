@@ -1,4 +1,4 @@
-# 🚪 TARDIS Closet
+# TARDIS Closet
 
 TARDIS Closet is a weather-aware, automated wardrobe randomizer built with Python, Streamlit, and the Notion API. It pulls your wardrobe from a Notion database, checks the current weather for your ZIP code, and generates a randomized outfit based on the occasion and weather conditions.
 
