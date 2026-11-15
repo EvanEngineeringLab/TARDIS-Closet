@@ -134,12 +134,12 @@ st.markdown(f"""
         border: 1px solid #555;
     }}
 
-    /* Force white text for form labels and inputs */
-    [data-testid="stForm"] label,
-    [data-testid="stForm"] p,
-    [data-testid="stWidgetLabel"] p {{
+    /* Force ALL text inside the form to be pure white */
+    [data-testid="stForm"] * {{
         color: white !important;
-        font-weight: 600 !important;
+    }}
+    [data-testid="stForm"] h3 {{
+        font-weight: 700 !important;
     }}
     
     /* Make the text input boxes lighter so they stand out */
