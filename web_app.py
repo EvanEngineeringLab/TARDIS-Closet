@@ -91,6 +91,14 @@ st.markdown(f"""
     [data-testid="StyledFullScreenButton"], 
     button[title="View fullscreen"] {{ display: none !important; }}
     [data-testid="column"]:hover {{ background-color: transparent !important; }}
+
+    /* Style the welcome form to look like a solid card */
+    [data-testid="stForm"] {{
+        background-color: rgba(0, 0, 0, 0.85) !important;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #555;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
