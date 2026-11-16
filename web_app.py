@@ -142,10 +142,11 @@ st.markdown(f"""
         font-weight: 700 !important;
     }}
     
-    /* Make the text input boxes lighter so they stand out */
+    /* Force the input boxes to be dark grey so white text is always visible */
     [data-testid="stTextInput"] input {{
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        color: white !important;
+        background-color: rgba(50, 50, 50, 0.9) !important; 
+        color: white !important; 
+        border: 1px solid #777 !important;
     }}
 
     /* Make the columns responsive for mobile */
