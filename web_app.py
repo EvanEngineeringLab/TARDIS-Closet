@@ -428,8 +428,25 @@ elif st.session_state.page == "fetch_outfit":
     col_a, col_b = st.columns([1, 1])
     with col_a:
         if st.button("🔄 Shuffle Outfit", use_container_width=True, type="primary"):
-            with st.spinner("Finding your fashion..."):
-                time.sleep(0.8) 
+            # Custom styled spinner so the text is white
+            placeholder = st.empty()
+            placeholder.markdown(
+                """
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px; color: white; font-size: 20px; font-weight: bold; margin-top: 20px;">
+                    <div style="border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite;"></div>
+                    Finding your fashion...
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            time.sleep(1.5) # Increased delay to 1.5 seconds
+            placeholder.empty()
             st.rerun()
     with col_b:
         st.button("❌ Start Over", use_container_width=True, on_click=reset_app)
