@@ -687,308 +687,299 @@ elif st.session_state.page == "zip_map":
 # ==========================================
 elif st.session_state.page == "config":
     
-    # 1. AUTOMATIC SCREEN WIDTH DETECTION VIA QUERY PARAMS
+    # Instant CSS Media Query Mobile Blocker (< 500px)
+    # This hides the normal UI container on mobile devices before they even render
     st.markdown("""
+        <style>
+        @media (max-width: 500px) {
+            /* Hide the main app container on mobile screens */
+            .main .block-container {
+                display: none !important;
+            }
+        }
+        </style>
+        
+        <!-- Mobile fallback warning card that only shows on small screens -->
+        <div style="display: none; background-color: #1e1e1e; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 30px; margin: 40px auto; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); text-align: center;" id="mobile-blocker">
+            <h3 style="color: #ff9800; margin-top: 0;">PC Setup Required</h3>
+            <p style="color: #ffffff; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
+                Wardrobe and database configuration requires a desktop or laptop computer. Please switch to a PC to complete your setup!
+            </p>
+        </div>
         <script>
-            (function() {
-                const width = window.innerWidth;
-                const urlParams = new URLSearchParams(window.parent.location.search);
-                const currentWidthParam = urlParams.get('sw');
-                if (!currentWidthParam || Math.abs(parseInt(currentWidthParam) - width) > 50) {
-                    urlParams.set('sw', width);
-                    window.parent.location.search = urlParams.toString();
-                }
-            })();
+            // If window width is under 500px, display our custom blocker card
+            if (window.innerWidth < 500) {
+                document.getElementById('mobile-blocker').style.display = 'block';
+            }
         </script>
     """, unsafe_allow_html=True)
 
-    try:
-        screen_width = int(st.query_params.get("sw", 1024))
-    except Exception:
-        screen_width = 1024
+    # Only execute/render the heavy configuration workstation if width is >= 500px
+    # (We can use a quick JS snippet or let the desktop render normally)
+    
+    # Scoped CSS for desktop view
+    st.markdown("""
+        <style>
+        .block-container {
+            max-width: 90% !important;
+            padding-top: 2rem !important;
+        }
+        .custom-desc-box {
+            background-color: #1e1e1e !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            margin-bottom: 20px !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5) !important;
+            text-align: center !important;
+        }
+        .custom-desc-text {
+            color: #ffffff !important;
+            font-size: 18px !important;
+            font-weight: normal !important;
+            line-height: 1.4 !important;
+        }
+        /* Perfectly match file uploader height to text inputs */
+        [data-testid="stFileUploader"] section {
+            padding: 0px 4px !important;
+            min-height: 34px !important;
+            height: 36px !important;
+        }
+        [data-testid="stFileUploader"] section div {
+            gap: 0px !important;
+            padding: 0px !important;
+        }
+        [data-testid="stFileUploader"] button {
+            padding: 0px 10px !important;
+            min-height: 28px !important;
+            font-size: 13px !important;
+        }
+        /* Hide file uploader subtext/instructions completely */
+        [data-testid="stFileUploader"] small, 
+        [data-testid="stFileUploader"] section div[data-testid="stMarkdownContainer"] {
+            display: none !important;
+        }
+        </style>
+        <div class="custom-desc-box">
+            <div class="custom-desc-text">Customize your dynamic Notion database options, rename items, set priority position, and assign default PNG photos per occasion.</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # 2. MOBILE BLOCKER (< 500 pixels) WITH RETURN TO MENU BUTTON
-    if screen_width < 500:
-        st.markdown("""
-            <div style="background-color: #1e1e1e; border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 30px; margin: 40px auto; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); text-align: center;">
-                <h3 style="color: #ff9800; margin-top: 0;">PC Setup Required</h3>
-                <p style="color: #ffffff; font-size: 16px; line-height: 1.5;">
-                    Your screen width is detected at <b>{}px</b>. Please complete your wardrobe and database configuration using a PC or laptop.
-                </p>
-            </div>
-        """.format(screen_width), unsafe_allow_html=True)
+    st.markdown('<div style="color: white; font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 3px #000;">Wardrobe Configuration</div>', unsafe_allow_html=True)
 
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("Return to Menu", use_container_width=True, key="btn_return_menu"):
-                st.session_state.page = "menu"
-                st.rerun()
+    # Initialize occasion photo reserves in session state if missing
+    if "occasion_photos" not in st.session_state:
+        st.session_state.occasion_photos = {}
 
-    # 3. FULL PC CONFIGURATION WORKSTATION (>= 500 pixels)
-    else:
-        # Scoped CSS to widen layout, match uploader height, and hide uploader helper text
-        st.markdown("""
-            <style>
-            .block-container {
-                max-width: 90% !important;
-                padding-top: 2rem !important;
+    # Fetch live schema from Notion once per entry
+    if "notion_schema" not in st.session_state:
+        with st.spinner("Fetching database schema from Notion..."):
+            url = f"https://api.notion.com/v1/databases/{st.session_state.database_id}"
+            headers = {
+                "Authorization": f"Bearer {st.session_state.notion_token}",
+                "Notion-Version": "2022-06-28"
             }
-            .custom-desc-box {
-                background-color: #1e1e1e !important;
-                border: 1px solid rgba(255,255,255,0.2) !important;
-                border-radius: 12px !important;
-                padding: 16px !important;
-                margin-bottom: 20px !important;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.5) !important;
-                text-align: center !important;
-            }
-            .custom-desc-text {
-                color: #ffffff !important;
-                font-size: 18px !important;
-                font-weight: normal !important;
-                line-height: 1.4 !important;
-            }
-            /* Perfectly match file uploader height to text inputs */
-            [data-testid="stFileUploader"] section {
-                padding: 0px 4px !important;
-                min-height: 34px !important;
-                height: 36px !important;
-            }
-            [data-testid="stFileUploader"] section div {
-                gap: 0px !important;
-                padding: 0px !important;
-            }
-            [data-testid="stFileUploader"] button {
-                padding: 0px 10px !important;
-                min-height: 28px !important;
-                font-size: 13px !important;
-            }
-            /* Hide file uploader subtext/instructions completely */
-            [data-testid="stFileUploader"] small, 
-            [data-testid="stFileUploader"] section div[data-testid="stMarkdownContainer"] {
-                display: none !important;
-            }
-            </style>
-            <div class="custom-desc-box">
-                <div class="custom-desc-text">Customize your dynamic Notion database options, rename items, set priority position, and assign default PNG photos per occasion.</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown('<div style="color: white; font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 20px; text-shadow: 2px 2px 3px #000;">Wardrobe Configuration</div>', unsafe_allow_html=True)
-
-        # Initialize occasion photo reserves in session state if missing
-        if "occasion_photos" not in st.session_state:
-            st.session_state.occasion_photos = {}
-
-        # Fetch live schema from Notion once per entry
-        if "notion_schema" not in st.session_state:
-            with st.spinner("Fetching database schema from Notion..."):
-                url = f"https://api.notion.com/v1/databases/{st.session_state.database_id}"
-                headers = {
-                    "Authorization": f"Bearer {st.session_state.notion_token}",
-                    "Notion-Version": "2022-06-28"
-                }
-                response = requests.get(url, headers=headers)
-                if response.status_code == 200:
-                    st.session_state.notion_schema = True
-                    schema = response.json()
-                    properties = schema.get("properties", {})
-                    
-                    g_type_prop = properties.get("Garment Type", {})
-                    g_prop_type = g_type_prop.get("type", "select")
-                    g_options = [opt["name"] for opt in g_type_prop.get(g_prop_type, {}).get("options", [])]
-                    
-                    occasion_prop = properties.get("Occasion", {})
-                    o_prop_type = occasion_prop.get("type", "multi_select")
-                    o_options = [opt["name"] for opt in occasion_prop.get(o_prop_type, {}).get("options", [])]
-                    
-                    st.session_state.g_prop_type = g_prop_type
-                    st.session_state.o_prop_type = o_prop_type
-                    st.session_state.editable_garment_types = g_options
-                    st.session_state.editable_occasions = o_options
-                else:
-                    st.error(f"Failed to fetch Notion schema: {response.status_code}")
-                    st.session_state.editable_garment_types = []
-                    st.session_state.editable_occasions = []
-
-        if "editable_garment_types" not in st.session_state:
-            st.session_state.editable_garment_types = []
-        if "editable_occasions" not in st.session_state:
-            st.session_state.editable_occasions = []
-
-        # Deletion, Addition, & Clear Callbacks
-        def remove_garment(index):
-            st.session_state.editable_garment_types.pop(index)
-
-        def remove_occasion(index):
-            removed_item = st.session_state.editable_occasions.pop(index)
-            if removed_item in st.session_state.occasion_photos:
-                del st.session_state.occasion_photos[removed_item]
-
-        def clear_occasion_photo(occ_name):
-            if occ_name in st.session_state.occasion_photos:
-                del st.session_state.occasion_photos[occ_name]
-
-        def add_garment_callback():
-            val = st.session_state.get("new_garment_input", "").strip()
-            if val and val not in st.session_state.editable_garment_types:
-                st.session_state.editable_garment_types.append(val)
-                st.session_state.new_garment_input = ""
-
-        def add_occasion_callback():
-            val = st.session_state.get("new_occasion_input", "").strip()
-            if val and val not in st.session_state.editable_occasions:
-                st.session_state.editable_occasions.append(val)
-                st.session_state.new_occasion_input = ""
-
-        col_cfg1, col_cfg2 = st.columns(2, gap="large")
-
-        # --- GARMENT TYPES COLUMN ---
-        with col_cfg1:
-            st.markdown('<div style="color: white; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; text-align: center; margin-bottom: 15px;">Garment Types</div>', unsafe_allow_html=True)
-            
-            g_list = st.session_state.editable_garment_types
-
-            if not g_list:
-                st.markdown('<div style="color: white; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 15px;">No garment types in Notion yet. Add one below.</div>', unsafe_allow_html=True)
-
-            for idx, item in enumerate(g_list):
-                cols = st.columns([1.0, 3.5, 0.8])
-                with cols[0]:
-                    positions = list(range(1, len(g_list) + 1))
-                    new_pos = st.selectbox("Pos", options=positions, index=idx, key=f"pos_g_{idx}_{item}", label_visibility="collapsed")
-                    if new_pos - 1 != idx:
-                        item_to_move = g_list.pop(idx)
-                        g_list.insert(new_pos - 1, item_to_move)
-                        st.session_state.editable_garment_types = g_list
-                        st.rerun()
-                with cols[1]:
-                    val = st.text_input(f"g_{idx}", value=item, key=f"txt_g_{idx}_{item}", label_visibility="collapsed")
-                    if val.strip() and val.strip() != item:
-                        st.session_state.editable_garment_types[idx] = val.strip()
-                with cols[2]:
-                    st.button("❌", key=f"del_g_{idx}", on_click=remove_garment, args=(idx,))
-
-            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-            st.text_input("Add new garment type", placeholder="Type & press Enter...", key="new_garment_input", on_change=add_garment_callback, label_visibility="collapsed")
-            
-            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-            if st.button("CLEAR GARMENTS", key="btn_clear_garments", use_container_width=True):
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                st.session_state.notion_schema = True
+                schema = response.json()
+                properties = schema.get("properties", {})
+                
+                g_type_prop = properties.get("Garment Type", {})
+                g_prop_type = g_type_prop.get("type", "select")
+                g_options = [opt["name"] for opt in g_type_prop.get(g_prop_type, {}).get("options", [])]
+                
+                occasion_prop = properties.get("Occasion", {})
+                o_prop_type = occasion_prop.get("type", "multi_select")
+                o_options = [opt["name"] for opt in occasion_prop.get(o_prop_type, {}).get("options", [])]
+                
+                st.session_state.g_prop_type = g_prop_type
+                st.session_state.o_prop_type = o_prop_type
+                st.session_state.editable_garment_types = g_options
+                st.session_state.editable_occasions = o_options
+            else:
+                st.error(f"Failed to fetch Notion schema: {response.status_code}")
                 st.session_state.editable_garment_types = []
-                st.rerun()
-
-        # --- OCCASIONS COLUMN ---
-        with col_cfg2:
-            st.markdown('<div style="color: white; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; text-align: center; margin-bottom: 15px;">Occasions & Photos</div>', unsafe_allow_html=True)
-            
-            o_list = st.session_state.editable_occasions
-
-            if not o_list:
-                st.markdown('<div style="color: white; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 15px;">No occasions in Notion yet. Add one below.</div>', unsafe_allow_html=True)
-
-            for idx, item in enumerate(o_list):
-                has_photo = item in st.session_state.occasion_photos
-                
-                if has_photo:
-                    cols = st.columns([1.0, 2.5, 3.0, 0.8, 0.8])
-                else:
-                    cols = st.columns([1.0, 2.5, 3.8, 0.8])
-
-                with cols[0]:
-                    positions = list(range(1, len(o_list) + 1))
-                    new_pos = st.selectbox("Pos", options=positions, index=idx, key=f"pos_o_{idx}_{item}", label_visibility="collapsed")
-                    if new_pos - 1 != idx:
-                        item_to_move = o_list.pop(idx)
-                        o_list.insert(new_pos - 1, item_to_move)
-                        st.session_state.editable_occasions = o_list
-                        st.rerun()
-                with cols[1]:
-                    val = st.text_input(f"o_{idx}", value=item, key=f"txt_o_{idx}_{item}", label_visibility="collapsed")
-                    if val.strip() and val.strip() != item:
-                        old_name = item
-                        new_name = val.strip()
-                        st.session_state.editable_occasions[idx] = new_name
-                        if old_name in st.session_state.occasion_photos:
-                            st.session_state.occasion_photos[new_name] = st.session_state.occasion_photos.pop(old_name)
-                with cols[2]:
-                    uploaded_png = st.file_uploader(f"PNG for {item}", type=["png"], key=f"png_o_{idx}_{item}", label_visibility="collapsed")
-                    if uploaded_png is not None:
-                        st.session_state.occasion_photos[item] = uploaded_png
-                
-                if has_photo:
-                    with cols[3]:
-                        st.button("🗑️", key=f"clear_photo_{idx}_{item}", on_click=clear_occasion_photo, args=(item,), help="Remove uploaded photo and revert to default asset")
-                    with cols[4]:
-                        st.button("❌", key=f"del_o_{idx}", on_click=remove_occasion, args=(idx,))
-                else:
-                    with cols[3]:
-                        st.button("❌", key=f"del_o_{idx}", on_click=remove_occasion, args=(idx,))
-
-            st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-            st.text_input("Add new occasion", placeholder="Type & press Enter...", key="new_occasion_input", on_change=add_occasion_callback, label_visibility="collapsed")
-
-            st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-            if st.button("CLEAR OCCASIONS", key="btn_clear_occasions", use_container_width=True):
                 st.session_state.editable_occasions = []
-                st.session_state.occasion_photos = {}
-                st.rerun()
 
-        st.write("---")
+    if "editable_garment_types" not in st.session_state:
+        st.session_state.editable_garment_types = []
+    if "editable_occasions" not in st.session_state:
+        st.session_state.editable_occasions = []
 
-        # Save & Commit to Notion & SQLite
-        if st.button("💾 Save & Continue to Main Menu", type="primary", use_container_width=True):
-            with st.spinner("Updating Notion database schema and saving persistent state..."):
-                url = f"https://api.notion.com/v1/databases/{st.session_state.database_id}"
-                headers = {
-                    "Authorization": f"Bearer {st.session_state.notion_token}",
-                    "Notion-Version": "2022-06-28",
-                    "Content-Type": "application/json"
-                }
-                
-                g_type_key = st.session_state.get("g_prop_type", "select")
-                o_type_key = st.session_state.get("o_prop_type", "multi_select")
+    # Deletion, Addition, & Clear Callbacks
+    def remove_garment(index):
+        st.session_state.editable_garment_types.pop(index)
 
-                payload = {
-                    "properties": {
-                        "Garment Type": {
-                            g_type_key: {
-                                "options": [{"name": name} for name in st.session_state.editable_garment_types]
-                            }
-                        },
-                        "Occasion": {
-                            o_type_key: {
-                                "options": [{"name": name} for name in st.session_state.editable_occasions]
-                            }
+    def remove_occasion(index):
+        removed_item = st.session_state.editable_occasions.pop(index)
+        if removed_item in st.session_state.occasion_photos:
+            del st.session_state.occasion_photos[removed_item]
+
+    def clear_occasion_photo(occ_name):
+        if occ_name in st.session_state.occasion_photos:
+            del st.session_state.occasion_photos[occ_name]
+
+    def add_garment_callback():
+        val = st.session_state.get("new_garment_input", "").strip()
+        if val and val not in st.session_state.editable_garment_types:
+            st.session_state.editable_garment_types.append(val)
+            st.session_state.new_garment_input = ""
+
+    def add_occasion_callback():
+        val = st.session_state.get("new_occasion_input", "").strip()
+        if val and val not in st.session_state.editable_occasions:
+            st.session_state.editable_occasions.append(val)
+            st.session_state.new_occasion_input = ""
+
+    col_cfg1, col_cfg2 = st.columns(2, gap="large")
+
+    # --- GARMENT TYPES COLUMN ---
+    with col_cfg1:
+        st.markdown('<div style="color: white; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; text-align: center; margin-bottom: 15px;">Garment Types</div>', unsafe_allow_html=True)
+        
+        g_list = st.session_state.editable_garment_types
+
+        if not g_list:
+            st.markdown('<div style="color: white; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 15px;">No garment types in Notion yet. Add one below.</div>', unsafe_allow_html=True)
+
+        for idx, item in enumerate(g_list):
+            cols = st.columns([1.0, 3.5, 0.8])
+            with cols[0]:
+                positions = list(range(1, len(g_list) + 1))
+                new_pos = st.selectbox("Pos", options=positions, index=idx, key=f"pos_g_{idx}_{item}", label_visibility="collapsed")
+                if new_pos - 1 != idx:
+                    item_to_move = g_list.pop(idx)
+                    g_list.insert(new_pos - 1, item_to_move)
+                    st.session_state.editable_garment_types = g_list
+                    st.rerun()
+            with cols[1]:
+                val = st.text_input(f"g_{idx}", value=item, key=f"txt_g_{idx}_{item}", label_visibility="collapsed")
+                if val.strip() and val.strip() != item:
+                    st.session_state.editable_garment_types[idx] = val.strip()
+            with cols[2]:
+                st.button("❌", key=f"del_g_{idx}", on_click=remove_garment, args=(idx,))
+
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+        st.text_input("Add new garment type", placeholder="Type & press Enter...", key="new_garment_input", on_change=add_garment_callback, label_visibility="collapsed")
+        
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("CLEAR GARMENTS", key="btn_clear_garments", use_container_width=True):
+            st.session_state.editable_garment_types = []
+            st.rerun()
+
+    # --- OCCASIONS COLUMN ---
+    with col_cfg2:
+        st.markdown('<div style="color: white; font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px #000; text-align: center; margin-bottom: 15px;">Occasions & Photos</div>', unsafe_allow_html=True)
+        
+        o_list = st.session_state.editable_occasions
+
+        if not o_list:
+            st.markdown('<div style="color: white; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 15px;">No occasions in Notion yet. Add one below.</div>', unsafe_allow_html=True)
+
+        for idx, item in enumerate(o_list):
+            has_photo = item in st.session_state.occasion_photos
+            
+            if has_photo:
+                cols = st.columns([1.0, 2.5, 3.0, 0.8, 0.8])
+            else:
+                cols = st.columns([1.0, 2.5, 3.8, 0.8])
+
+            with cols[0]:
+                positions = list(range(1, len(o_list) + 1))
+                new_pos = st.selectbox("Pos", options=positions, index=idx, key=f"pos_o_{idx}_{item}", label_visibility="collapsed")
+                if new_pos - 1 != idx:
+                    item_to_move = o_list.pop(idx)
+                    o_list.insert(new_pos - 1, item_to_move)
+                    st.session_state.editable_occasions = o_list
+                    st.rerun()
+            with cols[1]:
+                val = st.text_input(f"o_{idx}", value=item, key=f"txt_o_{idx}_{item}", label_visibility="collapsed")
+                if val.strip() and val.strip() != item:
+                    old_name = item
+                    new_name = val.strip()
+                    st.session_state.editable_occasions[idx] = new_name
+                    if old_name in st.session_state.occasion_photos:
+                        st.session_state.occasion_photos[new_name] = st.session_state.occasion_photos.pop(old_name)
+            with cols[2]:
+                uploaded_png = st.file_uploader(f"PNG for {item}", type=["png"], key=f"png_o_{idx}_{item}", label_visibility="collapsed")
+                if uploaded_png is not None:
+                    st.session_state.occasion_photos[item] = uploaded_png
+            
+            if has_photo:
+                with cols[3]:
+                    st.button("🗑️", key=f"clear_photo_{idx}_{item}", on_click=clear_occasion_photo, args=(item,), help="Remove uploaded photo and revert to default asset")
+                with cols[4]:
+                    st.button("❌", key=f"del_o_{idx}", on_click=remove_occasion, args=(idx,))
+            else:
+                with cols[3]:
+                    st.button("❌", key=f"del_o_{idx}", on_click=remove_occasion, args=(idx,))
+
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+        st.text_input("Add new occasion", placeholder="Type & press Enter...", key="new_occasion_input", on_change=add_occasion_callback, label_visibility="collapsed")
+
+        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+        if st.button("CLEAR OCCASIONS", key="btn_clear_occasions", use_container_width=True):
+            st.session_state.editable_occasions = []
+            st.session_state.occasion_photos = {}
+            st.rerun()
+
+    st.write("---")
+
+    # Save & Commit to Notion & SQLite
+    if st.button("💾 Save & Continue to Main Menu", type="primary", use_container_width=True):
+        with st.spinner("Updating Notion database schema and saving persistent state..."):
+            url = f"https://api.notion.com/v1/databases/{st.session_state.database_id}"
+            headers = {
+                "Authorization": f"Bearer {st.session_state.notion_token}",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json"
+            }
+            
+            g_type_key = st.session_state.get("g_prop_type", "select")
+            o_type_key = st.session_state.get("o_prop_type", "multi_select")
+
+            payload = {
+                "properties": {
+                    "Garment Type": {
+                        g_type_key: {
+                            "options": [{"name": name} for name in st.session_state.editable_garment_types]
+                        }
+                    },
+                    "Occasion": {
+                        o_type_key: {
+                            "options": [{"name": name} for name in st.session_state.editable_occasions]
                         }
                     }
                 }
+            }
+            
+            response = requests.patch(url, json=payload, headers=headers)
+            if response.status_code == 200:
+                st.session_state.occasions = st.session_state.editable_occasions
+                save_user_data(
+                    session_id=st.session_state.session_id,
+                    zip_code=st.session_state.zip_code,
+                    notion_token=st.session_state.notion_token,
+                    database_id=st.session_state.database_id,
+                    persona=st.session_state.persona,
+                    occasions=st.session_state.editable_occasions,
+                    occasion_photos=st.session_state.occasion_photos
+                )
                 
-                response = requests.patch(url, json=payload, headers=headers)
-                if response.status_code == 200:
-                    st.session_state.occasions = st.session_state.editable_occasions
-                    save_user_data(
-                        session_id=st.session_state.session_id,
-                        zip_code=st.session_state.zip_code,
-                        notion_token=st.session_state.notion_token,
-                        database_id=st.session_state.database_id,
-                        persona=st.session_state.persona,
-                        occasions=st.session_state.editable_occasions,
-                        occasion_photos=st.session_state.occasion_photos
-                    )
-                    
-                    st.success("Notion schema and photo storage updated successfully!")
-                    if "notion_schema" in st.session_state:
-                        del st.session_state.notion_schema
-                    time.sleep(1)
-                    st.session_state.page = "menu"
-                    st.rerun()
-                else:
-                    st.error(f"Failed to update Notion schema: {response.status_code} - {response.text}")
-        
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        if st.button("← Back to Menu", use_container_width=True):
-            st.session_state.page = "menu"
-            st.rerun()
+                st.success("Notion schema and photo storage updated successfully!")
+                if "notion_schema" in st.session_state:
+                    del st.session_state.notion_schema
+                time.sleep(1)
+                st.session_state.page = "menu"
+                st.rerun()
+            else:
+                st.error(f"Failed to update Notion schema: {response.status_code} - {response.text}")
+    
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    if st.button("← Back to Menu", use_container_width=True):
+        st.session_state.page = "menu"
+        st.rerun()
 
 # ==========================================
 # PAGE 1: THE MENU
