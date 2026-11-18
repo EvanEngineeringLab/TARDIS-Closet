@@ -1045,6 +1045,34 @@ elif st.session_state.page == "config":
 # PAGE 1: THE MENU
 # ==========================================
 elif st.session_state.page == "menu":
+    # --- EARLY SCHEMA AUTO-HYDRATION FOR MOBILE / BYPASS USERS ---
+    if (not st.session_state.get("occasions") or not st.session_state.get("garment_types")) and st.session_state.get("database_id") and st.session_state.get("notion_token"):
+        try:
+            import requests as req_sync
+            headers = {
+                "Authorization": f"Bearer {st.session_state.notion_token}",
+                "Notion-Version": "2022-02-22",
+                "Content-Type": "application/json"
+            }
+            db_res = req_sync.get(f"https://api.notion.com/v1/databases/{st.session_state.database_id}", headers=headers)
+            if db_res.status_code == 200:
+                db_json = db_res.json()
+                props = db_json.get("properties", {})
+                
+                # Extract Occasions multi-select/select options
+                for p_name, p_data in props.items():
+                    if p_name.lower() in ["occasion", "occasions"] and p_data.get("type") in ["multi_select", "select"]:
+                        opt_key = "multi_select" if p_data.get("type") == "multi_select" else "select"
+                        st.session_state["occasions"] = [opt["name"] for opt in p_data.get(opt_key, {}).get("options", [])]
+                    
+                    # Extract Garment Types options
+                    if p_name.lower() in ["garment type", "garment_type", "type"] and p_data.get("type") in ["multi_select", "select"]:
+                        opt_key = "multi_select" if p_data.get("type") == "multi_select" else "select"
+                        st.session_state["garment_types"] = [opt["name"] for opt in p_data.get(opt_key, {}).get("options", [])]
+        except Exception:
+            pass
+    # -------------------------------------------------------------
+
     with st.sidebar:
         st.header("Navigation")
 
